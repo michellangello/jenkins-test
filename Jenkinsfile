@@ -3,58 +3,89 @@ pipeline {
         agent any
 
         stages {
-            stage('prebuild') {
+            stage('Preparatio') {
                 steps {
                     script {
                         properties([
                             parameters([
-                                string(name: 'DEPLOY_BUILD_NUMBER',
-                                        defaultValue: 'new',
-                                        description: 'Leave "new" to build and deploy new version of the GIT_BRANCH.\nSpecify the existing build number to redeploy it.',
+                                string(name: 'CLUSTER',
+                                        defaultValue: 'ua',
+                                        description: 'Name of cluster (nl, us, ua)',
+                                        trim: true),
+                                string(name: 'TABLE_NAME',
+                                        description: 'Name of the table which column will be encrypted.',
+                                        trim: true),
+                                string(name: 'COLUMN_NAME',
+                                        description: 'Name of column that will be encrypted.',
+                                        trim: true),
+                                string(name: 'UNIQUE_COLUMNS',
+                                        defaultValue: 'id',
+                                        description: 'Space separated names of columns that uniquely define each row.',
                                         trim: true),
                                 [$class: 'ChoiceParameter',
                                     choiceType: 'PT_SINGLE_SELECT',
-                                    description: 'Select the Environemnt',
+                                    description: 'Select the column type',
                                     filterLength: 1,
                                     filterable: false,
-                                    name: 'ENVIRONMENT',
+                                    name: 'TARGET',
                                     script: [
                                         $class: 'GroovyScript',
                                         fallbackScript: [
                                             classpath: [],
                                             sandbox: true,
                                             script:
-                                                "return['Could not get The environemnts']"
+                                                "return['Could not get the types']"
                                         ],
                                         script: [
                                             classpath: [],
                                             sandbox: true,
                                             script:
-                                                "return['Staging','Production']"
+                                                "return['Plain','Json']"
                                         ]
                                     ]
                                 ],
-                                [$class: 'CascadeChoiceParameter',
-                                    choiceType: 'PT_SINGLE_SELECT',
-                                    description: 'Select the target to deploy the service to',
-                                    name: 'TARGET',
-                                    referencedParameters: 'ENVIRONMENT',
+                                [$class: 'DynamicReferenceParameter',
+                                    choiceType: 'ET_FORMATTED_HTML',
+                                    description: 'Select datatype',
+                                    name: 'DATA_TYPE',
+                                    referencedParameters: 'TARGET',
                                     script:
                                         [$class: 'GroovyScript',
                                         fallbackScript: [
                                                 classpath: [],
                                                 sandbox: true,
-                                                script: "return['Could not get Environment from ENVIRONMENT Param']"
+                                                script: ' return "" '
                                                 ],
                                         script: [
                                                 classpath: [],
                                                 sandbox: true,
                                                 script: '''
-                                                if (ENVIRONMENT.equals("Production")){
-                                                    return["fugu"]
+                                                if (TARGET.equals("Plain")){
+                                                    return "<input name='value' class='jenkins-input' value=''>"
                                                 }
-                                                else {
-                                                    return["autotests1", "stag", "stag1", "stag2", "stag3", "stag4", "stag5", "stag6", "stag7", "stag8", "stag10", "stag12", "stag13", "stag21", "fugu", "stag22", "stag23", "stag24", "debug", "ua-autotest", "test-stand"]
+                                                '''
+                                            ]
+                                    ]
+                                ],
+                                [$class: 'DynamicReferenceParameter',
+                                    choiceType: 'ET_FORMATTED_HTML',
+                                    description: 'Select json',
+                                    name: 'JSON_FIELDS',
+                                    omitValueField: true,
+                                    referencedParameters: 'TARGET',
+                                    script:
+                                        [$class: 'GroovyScript',
+                                        fallbackScript: [
+                                                classpath: [],
+                                                sandbox: true,
+                                                script: ' return "" '
+                                                ],
+                                        script: [
+                                                classpath: [],
+                                                sandbox: true,
+                                                script: '''
+                                                if (TARGET.equals("Json")){
+                                                    return "<input name='value' class='jenkins-input' value=''>"
                                                 }
                                                 '''
                                             ]
